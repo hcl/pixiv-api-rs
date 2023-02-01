@@ -1,5 +1,5 @@
-use std::io::Write;
-use std::{fs::File, io::BufReader, path::Path};
+use std::io::{BufReader, Cursor, Write};
+use std::{fs::File, path::Path};
 
 use log::error;
 use reqwest::Response;
@@ -142,5 +142,44 @@ impl Session {
 			}
 		};
 		return Ok(i);
+	}
+}
+
+impl Illust {
+	async fn save_illust(&self, sess: &Session, src: String, dst: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let dst_path = std::path::Path::new(dst.as_str());
+		let src_url = Url::parse(&src).unwrap();
+		let fname = src_url.path_segments().unwrap().last().unwrap();
+		let mut r = sess.client.get(&src);
+		r = r.header("Referer", "https://www.pixiv.net/");
+		match r.send().await {
+			Ok(r) => {
+				let mut file = std::fs::File::create(dst_path.join(fname))?;
+				let mut content = Cursor::new(r.bytes().await?);
+				std::io::copy(&mut content, &mut file)?;
+				return Ok(());
+			}
+			Err(e) => {
+				error!("error downloading {}: {}", &src, e);
+			}
+		};
+		Ok(())
+	}
+
+	pub async fn save(&self, sess: &Session, dst: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let src = self.urls.original.clone();
+		match self.illust_type {
+			2 => {
+				let src = src.replace("/img-original/", "/img-zip-ugoira/");
+				let src = src.split("_ugoira0");
+				let tmp_vec: Vec<&str> = src.collect();
+				let src = tmp_vec[0].to_owned() + "_ugoira1920x1080.zip";
+				self.save_illust(sess, src, dst).await?;
+			},
+			_ => {
+				self.save_illust(sess, src, dst).await?;
+			}
+		}
+		Ok(())
 	}
 }
