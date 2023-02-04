@@ -155,14 +155,14 @@ impl Session {
 		let resp: Response = match self.request_bookmark(&args, page).await {
 			Ok(r) => r,
 			Err(e) => {
-				error!("request_bookmark error: {}", e);
+				error!("get_bookmark->request_bookmark error: {}", e);
 				return Err(e);
 			}
 		};
 		let b: Bookmarks = match parse_response(resp).await {
 			Ok(r) => r,
 			Err(e) => {
-				error!("parse_response error: {}", e);
+				error!("get_bookmark->parse_response error: {}", e);
 				return Err(e);
 			}
 		};
