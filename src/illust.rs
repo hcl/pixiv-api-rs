@@ -1,7 +1,7 @@
 use std::io::{BufReader, Write};
 use std::{fs::File, path::Path};
 
-use log::error;
+use log::{error, info};
 use reqwest::Response;
 use reqwest::Url;
 
@@ -90,7 +90,7 @@ pub fn parse_file_path(path: &Path) {
 	println!(
 		"\turl_mini=\"{}\"",
 		body.urls.thumb.unwrap_or("".to_string())
-	)
+	);
 }
 
 #[allow(dead_code)]
@@ -143,13 +143,17 @@ impl Illust {
 			Ok(v) => v,
 			Err(e) => return Err(e),
 		};
+		let mut count = 0;
 		for mut item in pages {
+			info!("Saving {}, page {}", self.id, count);
 			if self.illust_type == 2 {
 				item.urls.replace_ugoira_url();
+				info!("Page {} is ugoira.", count);
 			}
 			if let Err(_) = item.urls.save_original(&sess, &dst).await {
 				continue;
 			};
+			count += 1;
 		}
 		Ok(())
 	}

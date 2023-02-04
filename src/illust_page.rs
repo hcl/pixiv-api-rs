@@ -25,7 +25,7 @@ pub fn parse_file_path(path: &Path) {
 		println!(
 			"thumb_mini=\"{}\" origin_url=\"{}\"",
 			item.urls.thumb_mini.unwrap_or("".to_string()),
-			item.urls.original
+			item.urls.original.unwrap_or("".to_string())
 		);
 	}
 }

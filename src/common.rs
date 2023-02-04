@@ -51,9 +51,9 @@ pub struct Urls {
 	pub mini: Option<String>,
 	pub thumb: Option<String>,
 	pub thumb_mini: Option<String>,
-	pub small: String,
-	pub regular: String,
-	pub original: String,
+	pub small: Option<String>,
+	pub regular: Option<String>,
+	pub original: Option<String>,
 }
 
 pub fn parse_root_json<R: Read>(rdr: R) -> Result<Value, ErrType> {
@@ -101,11 +101,12 @@ pub(crate) async fn parse_response<T: DeserializeOwned>(resp: Response) -> Resul
 
 impl Urls {
 	pub fn replace_ugoira_url(&mut self) {
-		let url = self.original.clone();
-		let url = url.replace("/img-original/", "/img-zip-ugoira/");
+		let orginal_url = self.original.as_ref().unwrap().clone();
+		let url = orginal_url.replace("/img-original/", "/img-zip-ugoira/");
 		let url_split: Vec<&str> = url.split("_ugoira0").collect();
 		let ret = url_split[0].to_owned() + "_ugoira1920x1080.zip";
-		self.original = ret;
+		debug!("URL after replace: {}", ret);
+		self.original = Some(ret);
 	}
 
 	pub async fn save_original(
@@ -113,7 +114,7 @@ impl Urls {
 		sess: &Session,
 		dst: &String,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let src = self.original.clone();
+		let src = self.original.as_ref().unwrap().clone();
 		let dst_path = std::path::Path::new(dst.as_str());
 		let src_url = Url::parse(&src).unwrap();
 		let fname = src_url.path_segments().unwrap().last().unwrap();
