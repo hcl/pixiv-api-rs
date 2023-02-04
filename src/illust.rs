@@ -108,6 +108,11 @@ impl Session {
 	async fn request_illust(&self, illust_id: &String) -> Result<Response, ErrType> {
 		let url_str = format!("{}/ajax/illust/{}", self.server_url, illust_id);
 		let referer_str = format!("{}/artworks/{}", self.server_url, illust_id);
+		if self.user_info.user_id.is_none() {
+			return Err(ErrType::Call(
+				"request_illust->must specify user_id".to_string(),
+			));
+		}
 		let hdr = api_header_build(&referer_str, &self.user_info.user_id);
 		let url = Url::parse(&url_str).unwrap();
 		let mut r = self.client.get(url);

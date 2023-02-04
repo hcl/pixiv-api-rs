@@ -19,14 +19,14 @@ pub struct Session {
 }
 
 pub struct UserInfo {
-	pub user_id: String,
+	pub user_id: Option<String>,
 }
 
 static DEFAULT_USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36";
 static DEFAULT_URL: &str = "https://www.pixiv.net";
 
 impl Session {
-	pub fn new(user_id: String) -> Session {
+	pub fn new(user_id: Option<String>) -> Session {
 		let mut cb = Client::builder();
 		cb = cb.user_agent(DEFAULT_USER_AGENT);
 
@@ -97,7 +97,7 @@ fn new_cookie_jar() -> Arc<CookieStoreMutex> {
 	return j;
 }
 
-pub(crate) fn api_header_build(referer_str: &String, user_id: &String) -> HeaderMap {
+pub(crate) fn api_header_build(referer_str: &String, user_id: &Option<String>) -> HeaderMap {
 	let mut hdr = HeaderMap::new();
 	hdr.insert("authority", HeaderValue::from_static("www.pixiv.net"));
 	hdr.insert("accept", HeaderValue::from_static("application/json"));
@@ -109,9 +109,8 @@ pub(crate) fn api_header_build(referer_str: &String, user_id: &String) -> Header
 		"referer",
 		HeaderValue::from_str(referer_str.as_str()).unwrap(),
 	);
-	hdr.insert(
-		"x-user-id",
-		HeaderValue::from_str(user_id.as_str()).unwrap(),
-	);
+	if let Some(uid) = user_id {
+		hdr.insert("x-user-id", HeaderValue::from_str(uid.as_str()).unwrap());
+	};
 	return hdr;
 }

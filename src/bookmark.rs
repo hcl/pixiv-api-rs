@@ -116,13 +116,21 @@ pub fn parse_file_path(path: &Path) {
 
 impl Session {
 	async fn request_bookmark(&self, args: &BookMarkArgs, page: i64) -> Result<Response, ErrType> {
+		if self.user_info.user_id.is_none() {
+			return Err(ErrType::Call(
+				"request_bookmark->must specify user_id".to_string(),
+			));
+		}
 		let url_str = format!(
 			"{}/ajax/user/{}/illusts/bookmarks",
-			self.server_url, self.user_info.user_id
+			self.server_url,
+			self.user_info.user_id.as_ref().unwrap()
 		);
 		let referer_str = format!(
 			"{}/users/{}/bookmarks/artworks?p={}",
-			self.server_url, self.user_info.user_id, page
+			self.server_url,
+			self.user_info.user_id.as_ref().unwrap(),
+			page
 		);
 
 		let hdr = api_header_build(&referer_str, &self.user_info.user_id);

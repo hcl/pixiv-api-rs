@@ -12,6 +12,7 @@ pub enum ErrType {
 	Parser(serde_json::Error),
 	Request(reqwest::Error),
 	Api(String),
+	Call(String),
 }
 
 impl Display for ErrType {
@@ -20,6 +21,7 @@ impl Display for ErrType {
 			ErrType::Parser(e) => write!(f, "Parser Error: {}", e.to_string()),
 			ErrType::Request(e) => write!(f, "Request Error: {}", e),
 			ErrType::Api(e_msg) => write!(f, "API Error: {}", e_msg),
+			ErrType::Call(e) => write!(f, "Call Error: {}", e),
 		}
 	}
 }
