@@ -48,14 +48,14 @@ impl Session {
 		let resp: Response = match self.request_illust_page(illust_id).await {
 			Ok(r) => r,
 			Err(e) => {
-				error!("request_illust error: {}", e);
+				error!("get_illust_page->request_illust_page error: {}", e);
 				return Err(e);
 			}
 		};
 		let i: Vec<Illusts> = match parse_response(resp).await {
 			Ok(r) => r,
 			Err(e) => {
-				error!("parse_response error: {}", e);
+				error!("get_illust_page->parse_response error: {}", e);
 				return Err(e);
 			}
 		};

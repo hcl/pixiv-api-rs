@@ -122,14 +122,14 @@ impl Session {
 		let resp: Response = match self.request_illust(illust_id).await {
 			Ok(r) => r,
 			Err(e) => {
-				error!("request_illust error: {}", e);
+				error!("get_illust->request_illust error: {}", e);
 				return Err(e);
 			}
 		};
 		let i: Illust = match parse_response(resp).await {
 			Ok(r) => r,
 			Err(e) => {
-				error!("parse_response error: {}", e);
+				error!("get_illust->parse_response error: {}", e);
 				return Err(e);
 			}
 		};
