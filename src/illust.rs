@@ -145,7 +145,7 @@ impl Illust {
 		};
 		let mut count = 0;
 		for mut item in pages {
-			info!("Saving {}, page {}", self.id, count);
+			info!("Saving {}, page {}/{}", self.id, count, self.page_count - 1);
 			if self.illust_type == 2 {
 				item.urls.replace_ugoira_url();
 				info!("Page {} is ugoira.", count);
