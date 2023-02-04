@@ -52,7 +52,7 @@ impl Session {
 		&self,
 		illust_id: &String,
 		user_id: &String,
-	) -> Result<Illusts, ErrType> {
+	) -> Result<Vec<Illusts>, ErrType> {
 		let resp: Response = match self.request_illust_page(illust_id, user_id).await {
 			Ok(r) => r,
 			Err(e) => {
@@ -60,7 +60,7 @@ impl Session {
 				return Err(e);
 			}
 		};
-		let i: Illusts = match parse_response(resp).await {
+		let i: Vec<Illusts> = match parse_response(resp).await {
 			Ok(r) => r,
 			Err(e) => {
 				error!("parse_response error: {}", e);

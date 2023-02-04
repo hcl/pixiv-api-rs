@@ -1,4 +1,4 @@
-use std::io::{BufReader, Cursor, Write};
+use std::io::{BufReader, Write};
 use std::{fs::File, path::Path};
 
 use log::error;
@@ -146,39 +146,21 @@ impl Session {
 }
 
 impl Illust {
-	async fn save_illust(&self, sess: &Session, src: String, dst: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let dst_path = std::path::Path::new(dst.as_str());
-		let src_url = Url::parse(&src).unwrap();
-		let fname = src_url.path_segments().unwrap().last().unwrap();
-		let mut r = sess.client.get(&src);
-		r = r.header("Referer", "https://www.pixiv.net/");
-		match r.send().await {
-			Ok(r) => {
-				let mut file = std::fs::File::create(dst_path.join(fname))?;
-				let mut content = Cursor::new(r.bytes().await?);
-				std::io::copy(&mut content, &mut file)?;
-				return Ok(());
-			}
-			Err(e) => {
-				error!("error downloading {}: {}", &src, e);
-			}
+	pub async fn save(&mut self, sess: &Session, dst: String) -> Result<(), ErrType> {
+		let pages = match sess
+			.get_illust_page(&self.id, &sess.user_info.user_id)
+			.await
+		{
+			Ok(v) => v,
+			Err(e) => return Err(e),
 		};
-		Ok(())
-	}
-
-	pub async fn save(&self, sess: &Session, dst: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let src = self.urls.original.clone();
-		match self.illust_type {
-			2 => {
-				let src = src.replace("/img-original/", "/img-zip-ugoira/");
-				let src = src.split("_ugoira0");
-				let tmp_vec: Vec<&str> = src.collect();
-				let src = tmp_vec[0].to_owned() + "_ugoira1920x1080.zip";
-				self.save_illust(sess, src, dst).await?;
-			},
-			_ => {
-				self.save_illust(sess, src, dst).await?;
+		for mut item in pages {
+			if self.illust_type == 2 {
+				item.urls.replace_ugoira_url();
 			}
+			if let Err(_) = item.urls.save_original(&sess, &dst).await {
+				continue;
+			};
 		}
 		Ok(())
 	}

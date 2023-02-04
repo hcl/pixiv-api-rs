@@ -1,7 +1,11 @@
-use reqwest::Response;
+use log::error;
+use reqwest::{Response, Url};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
-use std::{fmt::Display, io::Read};
+use std::fmt::{Debug, Display};
+use std::io::{Cursor, Read};
+
+use crate::client::Session;
 
 #[derive(Debug)]
 pub enum ErrType {
@@ -93,4 +97,39 @@ pub(crate) async fn parse_response<T: DeserializeOwned>(resp: Response) -> Resul
 		}
 	};
 	return Ok(v);
+}
+
+impl Urls {
+	pub fn replace_ugoira_url(&mut self) {
+		let url = self.original.clone();
+		let url = url.replace("/img-original/", "/img-zip-ugoira/");
+		let url_split: Vec<&str> = url.split("_ugoira0").collect();
+		let ret = url_split[0].to_owned() + "_ugoira1920x1080.zip";
+		self.original = ret;
+	}
+
+	pub async fn save_original(
+		&self,
+		sess: &Session,
+		dst: &String,
+	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let src = self.original.clone();
+		let dst_path = std::path::Path::new(dst.as_str());
+		let src_url = Url::parse(&src).unwrap();
+		let fname = src_url.path_segments().unwrap().last().unwrap();
+		let mut r = sess.client.get(&src);
+		r = r.header("Referer", "https://www.pixiv.net/");
+		match r.send().await {
+			Ok(r) => {
+				let mut file = std::fs::File::create(dst_path.join(fname))?;
+				let mut content = Cursor::new(r.bytes().await?);
+				std::io::copy(&mut content, &mut file)?;
+				return Ok(());
+			}
+			Err(e) => {
+				error!("error downloading {}: {}", &src, e);
+			}
+		};
+		Ok(())
+	}
 }

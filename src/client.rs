@@ -12,6 +12,7 @@ use std::io::BufReader;
 use std::sync::Arc;
 
 pub struct Session {
+	pub user_info: UserInfo,
 	pub server_url: String,
 	pub client: Client,
 	pub cookie_jar: Arc<CookieStoreMutex>,
@@ -25,7 +26,7 @@ static DEFAULT_USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) App
 static DEFAULT_URL: &str = "https://www.pixiv.net";
 
 impl Session {
-	pub fn new() -> Session {
+	pub fn new(user_id: String) -> Session {
 		let mut cb = Client::builder();
 		cb = cb.user_agent(DEFAULT_USER_AGENT);
 
@@ -36,6 +37,7 @@ impl Session {
 			Err(e) => panic!("{}", e),
 		};
 		return Session {
+			user_info: UserInfo { user_id },
 			server_url: DEFAULT_URL.to_string(),
 			client: c,
 			cookie_jar: j,
