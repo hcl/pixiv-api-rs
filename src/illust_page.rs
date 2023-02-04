@@ -32,11 +32,6 @@ pub fn parse_file_path(path: &Path) {
 
 impl Session {
 	async fn request_illust_page(&self, illust_id: &String) -> Result<Response, ErrType> {
-		if self.user_info.user_id.is_none() {
-			return Err(ErrType::Call(
-				"request_illust_page->must specify user_id".to_string(),
-			));
-		}
 		let url_str = format!("{}/ajax/illust/{}/pages", self.server_url, illust_id);
 		let referer_str = format!("{}/artworks/{}", self.server_url, illust_id);
 		let hdr = api_header_build(&referer_str, &self.user_info.user_id);
