@@ -141,7 +141,7 @@ impl Session {
 
 	pub async fn get_bookmark(
 		&self,
-		cat: Catagory,
+		cat: &Catagory,
 		tag: &String,
 		page: i64,
 	) -> Result<Bookmarks, ErrType> {
