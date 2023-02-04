@@ -1,4 +1,4 @@
-use log::error;
+use log::{debug, error};
 use reqwest::{Response, Url};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
@@ -85,7 +85,7 @@ pub(crate) async fn parse_response<T: DeserializeOwned>(resp: Response) -> Resul
 		Ok(r) => r,
 		Err(e) => return Err(ErrType::Request(e)),
 	};
-	// println!("{}", resp_text);
+	debug!("{}", resp_text);
 	let v = match parse_root_json_str(&resp_text) {
 		Ok(r) => r,
 		Err(e) => return Err(e),
