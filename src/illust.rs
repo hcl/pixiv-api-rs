@@ -105,14 +105,10 @@ pub fn clean_json(input: &Path, output: &Path) {
 }
 
 impl Session {
-	async fn request_illust(
-		&self,
-		illust_id: &String,
-		user_id: &String,
-	) -> Result<Response, ErrType> {
+	async fn request_illust(&self, illust_id: &String) -> Result<Response, ErrType> {
 		let url_str = format!("{}/ajax/illust/{}", self.server_url, illust_id);
 		let referer_str = format!("{}/artworks/{}", self.server_url, illust_id);
-		let hdr = api_header_build(&referer_str, user_id);
+		let hdr = api_header_build(&referer_str, &self.user_info.user_id);
 		let url = Url::parse(&url_str).unwrap();
 		let mut r = self.client.get(url);
 		r = r.headers(hdr);
@@ -122,12 +118,8 @@ impl Session {
 		};
 	}
 
-	pub async fn get_illust(
-		&self,
-		illust_id: &String,
-		user_id: &String,
-	) -> Result<Illust, ErrType> {
-		let resp: Response = match self.request_illust(illust_id, user_id).await {
+	pub async fn get_illust(&self, illust_id: &String) -> Result<Illust, ErrType> {
+		let resp: Response = match self.request_illust(illust_id).await {
 			Ok(r) => r,
 			Err(e) => {
 				error!("request_illust error: {}", e);
@@ -147,10 +139,7 @@ impl Session {
 
 impl Illust {
 	pub async fn save(&mut self, sess: &Session, dst: String) -> Result<(), ErrType> {
-		let pages = match sess
-			.get_illust_page(&self.id, &sess.user_info.user_id)
-			.await
-		{
+		let pages = match sess.get_illust_page(&self.id).await {
 			Ok(v) => v,
 			Err(e) => return Err(e),
 		};

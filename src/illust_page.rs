@@ -31,14 +31,10 @@ pub fn parse_file_path(path: &Path) {
 }
 
 impl Session {
-	async fn request_illust_page(
-		&self,
-		illust_id: &String,
-		user_id: &String,
-	) -> Result<Response, ErrType> {
+	async fn request_illust_page(&self, illust_id: &String) -> Result<Response, ErrType> {
 		let url_str = format!("{}/ajax/illust/{}/pages", self.server_url, illust_id);
 		let referer_str = format!("{}/artworks/{}", self.server_url, illust_id);
-		let hdr = api_header_build(&referer_str, user_id);
+		let hdr = api_header_build(&referer_str, &self.user_info.user_id);
 		let url = Url::parse(&url_str).unwrap();
 		let mut r = self.client.get(url);
 		r = r.headers(hdr);
@@ -48,12 +44,8 @@ impl Session {
 		};
 	}
 
-	pub async fn get_illust_page(
-		&self,
-		illust_id: &String,
-		user_id: &String,
-	) -> Result<Vec<Illusts>, ErrType> {
-		let resp: Response = match self.request_illust_page(illust_id, user_id).await {
+	pub async fn get_illust_page(&self, illust_id: &String) -> Result<Vec<Illusts>, ErrType> {
+		let resp: Response = match self.request_illust_page(illust_id).await {
 			Ok(r) => r,
 			Err(e) => {
 				error!("request_illust error: {}", e);

@@ -115,22 +115,17 @@ pub fn parse_file_path(path: &Path) {
 }
 
 impl Session {
-	async fn request_bookmark(
-		&self,
-		user_id: &String,
-		args: &BookMarkArgs,
-		page: i64,
-	) -> Result<Response, ErrType> {
+	async fn request_bookmark(&self, args: &BookMarkArgs, page: i64) -> Result<Response, ErrType> {
 		let url_str = format!(
 			"{}/ajax/user/{}/illusts/bookmarks",
-			self.server_url, user_id
+			self.server_url, self.user_info.user_id
 		);
 		let referer_str = format!(
 			"{}/users/{}/bookmarks/artworks?p={}",
-			self.server_url, user_id, page
+			self.server_url, self.user_info.user_id, page
 		);
 
-		let hdr = api_header_build(&referer_str, user_id);
+		let hdr = api_header_build(&referer_str, &self.user_info.user_id);
 
 		let url = Url::from_str(url_str.as_str()).unwrap();
 
@@ -146,7 +141,6 @@ impl Session {
 
 	pub async fn get_bookmark(
 		&self,
-		user_id: &String,
 		cat: Catagory,
 		tag: &String,
 		page: i64,
@@ -158,7 +152,7 @@ impl Session {
 			rest: cat.to_string(),
 			tag: tag.to_string(),
 		};
-		let resp: Response = match self.request_bookmark(user_id, &args, page).await {
+		let resp: Response = match self.request_bookmark(&args, page).await {
 			Ok(r) => r,
 			Err(e) => {
 				error!("request_bookmark error: {}", e);
