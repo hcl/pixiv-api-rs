@@ -115,25 +115,22 @@ pub fn parse_file_path(path: &Path) {
 }
 
 impl Session {
-	async fn request_bookmark(&self, args: &BookMarkArgs, page: i64) -> Result<Response, ErrType> {
-		if self.user_info.user_id.is_none() {
-			return Err(ErrType::Call(
-				"request_bookmark->must specify user_id".to_string(),
-			));
-		}
+	async fn request_bookmark(
+		&self,
+		user_id: &String,
+		args: &BookMarkArgs,
+		page: i64,
+	) -> Result<Response, ErrType> {
 		let url_str = format!(
 			"{}/ajax/user/{}/illusts/bookmarks",
-			self.server_url,
-			self.user_info.user_id.as_ref().unwrap()
+			self.server_url, user_id
 		);
 		let referer_str = format!(
 			"{}/users/{}/bookmarks/artworks?p={}",
-			self.server_url,
-			self.user_info.user_id.as_ref().unwrap(),
-			page
+			self.server_url, user_id, page
 		);
 
-		let hdr = api_header_build(&referer_str, &self.user_info.user_id);
+		let hdr = api_header_build(&referer_str, user_id);
 
 		let url = Url::from_str(url_str.as_str()).unwrap();
 
@@ -149,7 +146,8 @@ impl Session {
 
 	pub async fn get_bookmark(
 		&self,
-		cat: &Catagory,
+		user_id: &String,
+		cat: Catagory,
 		tag: &String,
 		page: i64,
 	) -> Result<Bookmarks, ErrType> {
@@ -160,17 +158,17 @@ impl Session {
 			rest: cat.to_string(),
 			tag: tag.to_string(),
 		};
-		let resp: Response = match self.request_bookmark(&args, page).await {
+		let resp: Response = match self.request_bookmark(user_id, &args, page).await {
 			Ok(r) => r,
 			Err(e) => {
-				error!("get_bookmark->request_bookmark error: {}", e);
+				error!("request_bookmark error: {}", e);
 				return Err(e);
 			}
 		};
 		let b: Bookmarks = match parse_response(resp).await {
 			Ok(r) => r,
 			Err(e) => {
-				error!("get_bookmark->parse_response error: {}", e);
+				error!("parse_response error: {}", e);
 				return Err(e);
 			}
 		};

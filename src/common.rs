@@ -1,18 +1,13 @@
-use log::{debug, error};
-use reqwest::{Response, Url};
+use reqwest::Response;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
-use std::fmt::{Debug, Display};
-use std::io::{Cursor, Read};
-
-use crate::client::Session;
+use std::{fmt::Display, io::Read};
 
 #[derive(Debug)]
 pub enum ErrType {
 	Parser(serde_json::Error),
 	Request(reqwest::Error),
 	Api(String),
-	Call(String),
 }
 
 impl Display for ErrType {
@@ -21,7 +16,6 @@ impl Display for ErrType {
 			ErrType::Parser(e) => write!(f, "Parser Error: {}", e.to_string()),
 			ErrType::Request(e) => write!(f, "Request Error: {}", e),
 			ErrType::Api(e_msg) => write!(f, "API Error: {}", e_msg),
-			ErrType::Call(e) => write!(f, "Call Error: {}", e),
 		}
 	}
 }
@@ -53,9 +47,9 @@ pub struct Urls {
 	pub mini: Option<String>,
 	pub thumb: Option<String>,
 	pub thumb_mini: Option<String>,
-	pub small: Option<String>,
-	pub regular: Option<String>,
-	pub original: Option<String>,
+	pub small: String,
+	pub regular: String,
+	pub original: String,
 }
 
 pub fn parse_root_json<R: Read>(rdr: R) -> Result<Value, ErrType> {
@@ -87,7 +81,7 @@ pub(crate) async fn parse_response<T: DeserializeOwned>(resp: Response) -> Resul
 		Ok(r) => r,
 		Err(e) => return Err(ErrType::Request(e)),
 	};
-	debug!("{}", resp_text);
+	// println!("{}", resp_text);
 	let v = match parse_root_json_str(&resp_text) {
 		Ok(r) => r,
 		Err(e) => return Err(e),
@@ -99,40 +93,4 @@ pub(crate) async fn parse_response<T: DeserializeOwned>(resp: Response) -> Resul
 		}
 	};
 	return Ok(v);
-}
-
-impl Urls {
-	pub fn replace_ugoira_url(&mut self) {
-		let orginal_url = self.original.as_ref().unwrap().clone();
-		let url = orginal_url.replace("/img-original/", "/img-zip-ugoira/");
-		let url_split: Vec<&str> = url.split("_ugoira0").collect();
-		let ret = url_split[0].to_owned() + "_ugoira1920x1080.zip";
-		debug!("URL after replace: {}", ret);
-		self.original = Some(ret);
-	}
-
-	pub async fn save_original(
-		&self,
-		sess: &Session,
-		dst: &String,
-	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let src = self.original.as_ref().unwrap().clone();
-		let dst_path = std::path::Path::new(dst.as_str());
-		let src_url = Url::parse(&src).unwrap();
-		let fname = src_url.path_segments().unwrap().last().unwrap();
-		let mut r = sess.client.get(&src);
-		r = r.header("Referer", "https://www.pixiv.net/");
-		match r.send().await {
-			Ok(r) => {
-				let mut file = std::fs::File::create(dst_path.join(fname))?;
-				let mut content = Cursor::new(r.bytes().await?);
-				std::io::copy(&mut content, &mut file)?;
-				return Ok(());
-			}
-			Err(e) => {
-				error!("error downloading {}: {}", &src, e);
-			}
-		};
-		Ok(())
-	}
 }

@@ -1,7 +1,7 @@
-use std::io::{BufReader, Write};
-use std::{fs::File, path::Path};
+use std::io::Write;
+use std::{fs::File, io::BufReader, path::Path};
 
-use log::{error, info};
+use log::error;
 use reqwest::Response;
 use reqwest::Url;
 
@@ -90,7 +90,7 @@ pub fn parse_file_path(path: &Path) {
 	println!(
 		"\turl_mini=\"{}\"",
 		body.urls.thumb.unwrap_or("".to_string())
-	);
+	)
 }
 
 #[allow(dead_code)]
@@ -105,10 +105,14 @@ pub fn clean_json(input: &Path, output: &Path) {
 }
 
 impl Session {
-	async fn request_illust(&self, illust_id: &String) -> Result<Response, ErrType> {
+	async fn request_illust(
+		&self,
+		illust_id: &String,
+		user_id: &String,
+	) -> Result<Response, ErrType> {
 		let url_str = format!("{}/ajax/illust/{}", self.server_url, illust_id);
 		let referer_str = format!("{}/artworks/{}", self.server_url, illust_id);
-		let hdr = api_header_build(&referer_str, &self.user_info.user_id);
+		let hdr = api_header_build(&referer_str, user_id);
 		let url = Url::parse(&url_str).unwrap();
 		let mut r = self.client.get(url);
 		r = r.headers(hdr);
@@ -118,43 +122,25 @@ impl Session {
 		};
 	}
 
-	pub async fn get_illust(&self, illust_id: &String) -> Result<Illust, ErrType> {
-		let resp: Response = match self.request_illust(illust_id).await {
+	pub async fn get_illust(
+		&self,
+		illust_id: &String,
+		user_id: &String,
+	) -> Result<Illust, ErrType> {
+		let resp: Response = match self.request_illust(illust_id, user_id).await {
 			Ok(r) => r,
 			Err(e) => {
-				error!("get_illust->request_illust error: {}", e);
+				error!("request_illust error: {}", e);
 				return Err(e);
 			}
 		};
 		let i: Illust = match parse_response(resp).await {
 			Ok(r) => r,
 			Err(e) => {
-				error!("get_illust->parse_response error: {}", e);
+				error!("parse_response error: {}", e);
 				return Err(e);
 			}
 		};
 		return Ok(i);
-	}
-}
-
-impl Illust {
-	pub async fn save(&mut self, sess: &Session, dst: String) -> Result<(), ErrType> {
-		let pages = match sess.get_illust_page(&self.id).await {
-			Ok(v) => v,
-			Err(e) => return Err(e),
-		};
-		let mut count = 0;
-		for mut item in pages {
-			info!("Saving {}, page {}/{}", self.id, count, self.page_count - 1);
-			if self.illust_type == 2 {
-				item.urls.replace_ugoira_url();
-				info!("Page {} is ugoira.", count);
-			}
-			if let Err(_) = item.urls.save_original(&sess, &dst).await {
-				continue;
-			};
-			count += 1;
-		}
-		Ok(())
 	}
 }
