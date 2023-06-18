@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-reqwest = { version = "0.11", features = ["blocking", "rustls-tls", "cookies"] }
+reqwest = { version = "0.11", features = ["blocking", "rustls-tls", "cookies", "hyper-rustls"] }
 tokio = { version = "1", features = ["full"] }
 reqwest_cookie_store = "0.5.0"
 cookie_store = "0.19.0"
