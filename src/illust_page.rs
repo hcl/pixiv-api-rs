@@ -7,6 +7,7 @@ use std::path::Path;
 
 use crate::client::{api_header_build, Session};
 use crate::common::{parse_response, ErrType, Root, Urls};
+use crate::download::ugoira_url_parse;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Item {
@@ -55,6 +56,13 @@ impl Session {
 		illust_id: &String,
 		user_id: &String,
 	) -> Result<Vec<Item>, ErrType> {
+		let main_resp = match self.get_illust(illust_id, user_id).await {
+			Ok(r) => r,
+			Err(e) => {
+				error!("get_illust error: {}", e);
+				return Err(e);
+			}
+		};
 		let resp: Response = match self.request_illust_page(illust_id, user_id).await {
 			Ok(r) => r,
 			Err(e) => {
@@ -62,13 +70,18 @@ impl Session {
 				return Err(e);
 			}
 		};
-		let i: Vec<Item> = match parse_response(resp).await {
+		let mut ips: Vec<Item> = match parse_response(resp).await {
 			Ok(r) => r,
 			Err(e) => {
 				error!("parse_response error: {}", e);
 				return Err(e);
 			}
 		};
-		return Ok(i);
+		if main_resp.illust_type == 2 {
+			for i in &mut ips {
+				i.urls.original = ugoira_url_parse(&i.urls.original);
+			}
+		}
+		return Ok(ips);
 	}
 }
