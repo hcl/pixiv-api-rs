@@ -55,14 +55,7 @@ impl Session {
 		&self,
 		illust_id: &String,
 		user_id: &String,
-	) -> Result<Vec<Item>, ErrType> {
-		let main_resp = match self.get_illust(illust_id, user_id).await {
-			Ok(r) => r,
-			Err(e) => {
-				error!("get_illust error: {}", e);
-				return Err(e);
-			}
-		};
+	) -> Result<Illusts, ErrType> {
 		let resp: Response = match self.request_illust_page(illust_id, user_id).await {
 			Ok(r) => r,
 			Err(e) => {
@@ -70,18 +63,21 @@ impl Session {
 				return Err(e);
 			}
 		};
-		let mut ips: Vec<Item> = match parse_response(resp).await {
+		let ips: Vec<Item> = match parse_response(resp).await {
 			Ok(r) => r,
 			Err(e) => {
 				error!("parse_response error: {}", e);
 				return Err(e);
 			}
 		};
-		if main_resp.illust_type == 2 {
-			for i in &mut ips {
-				i.urls.original = ugoira_url_parse(&i.urls.original);
-			}
+		return Ok(Illusts(ips));
+	}
+}
+
+impl Illusts {
+	pub fn ugoira_url_process(&mut self) {
+		for i in &mut self.0 {
+			i.urls.original = ugoira_url_parse(&i.urls.original);
 		}
-		return Ok(ips);
 	}
 }
