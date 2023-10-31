@@ -18,19 +18,11 @@ pub struct BookMarkArgs {
 	pub tag: String,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum Catagory {
 	Public,
 	Private,
 }
-
-// impl Catagory {
-// 	fn as_str(&self) -> &'static str {
-// 		match self {
-// 			Catagory::Public => "show",
-// 			Catagory::Private => "hide",
-// 		}
-// 	}
-// }
 
 impl Display for Catagory {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -147,7 +139,7 @@ impl Session {
 	pub async fn get_bookmark(
 		&self,
 		user_id: &String,
-		cat: Catagory,
+		cat: &Catagory,
 		tag: &String,
 		page: i64,
 	) -> Result<Bookmarks, ErrType> {
